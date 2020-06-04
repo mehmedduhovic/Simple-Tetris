@@ -125,4 +125,7 @@
         'purple'
     ];
 
-    export {blocks, nextBlocks, width, displayWidth, colors};
+    const scores = [10, 50, 100, 200, 500];
+    const speeds = [800, 400, 200, 100, 50];
+
+    export {blocks, nextBlocks, width, displayWidth, colors, scores, speeds};

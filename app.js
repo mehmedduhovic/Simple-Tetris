@@ -1,4 +1,4 @@
-import { blocks, nextBlocks, width, colors } from "./blocks.js";
+import { blocks, nextBlocks, width, colors, scores, speeds } from "./blocks.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   const grid = document.querySelector(".grid");
@@ -18,6 +18,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let currElement;
   let displayIndex = 0;
   let shouldInitiallyRunDisplayShapes = true;
+  let intervalSpeed = 800;
+  let scoresCount = 0;
 
   randomBlock = Math.floor(Math.random() * blocks.length);
   randomRotation = Math.floor(Math.random() * blockVariationCount);
@@ -31,13 +33,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function undraw() {
     currElement.forEach((index) => {
-      squares[index + currentIndex].classList.remove("block", colors[randomBlock]);
+      squares[index + currentIndex].classList.remove(
+        "block",
+        colors[randomBlock]
+      );
     });
   }
 
   document.addEventListener("keyup", function (event) {
     if (event.key === "ArrowLeft") {
-      moveLeft();randomBlock
+      moveLeft();
+      randomBlock;
     } else if (event.key === "ArrowRight") {
       moveRight();
     } else if (event.key === "ArrowUp") {
@@ -52,6 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
     currentIndex += width;
     draw();
     freeze();
+    updateIntervalSpeed();
   }
 
   function freeze() {
@@ -110,7 +117,60 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function rotate() {
     undraw();
-    randomRotation++;
+
+    //fix for when the block rotates into other edge
+    if (randomBlock === 0) {
+      if (
+        (randomRotation !== 1 && currentIndex % width === width - 1) ||
+        (randomRotation !== 3 && currentIndex % width === width - 2)
+      ) {
+        randomRotation = randomRotation;
+      } else {
+        randomRotation = randomRotation + 1;
+      }
+    }
+
+    if (randomBlock === 1) {
+      if (
+        (randomRotation === 0 || randomRotation === 2) &&
+        currentIndex % width === width - 2
+      ) {
+        randomRotation = randomRotation;
+      } else {
+        randomRotation = randomRotation + 1;
+      }
+    }
+
+    if (randomBlock === 2) {
+      if (
+        (randomRotation === 3 && currentIndex % width === width - 2) ||
+        (randomRotation === 1 && currentIndex % width === width - 1)
+      ) {
+        randomRotation = randomRotation;
+      } else {
+        randomRotation = randomRotation + 1;
+      }
+    }
+
+    if (randomBlock === 4) {
+      if (
+        ((randomRotation === 0 || randomRotation === 2) &&
+          currentIndex % width === width - 1) ||
+        ((randomRotation === 0 || randomRotation === 2) &&
+          currentIndex % width === width - 2)
+      ) {
+        randomRotation = randomRotation;
+      } else if (
+        (randomRotation === 0 || randomRotation === 2) &&
+        currentIndex % width === width - 3
+      ) {
+        randomRotation = randomRotation + 1;
+        currentIndex -= 1;
+      } else {
+        randomRotation = randomRotation + 1;
+      }
+    }
+
     if (randomRotation == blockVariationCount) {
       randomRotation = 0;
     }
@@ -128,7 +188,10 @@ document.addEventListener("DOMContentLoaded", () => {
     newRotation = Math.floor(Math.random() * blockVariationCount);
 
     nextBlocks[newBlock][newRotation].forEach((index) => {
-      displayNextShape[displayIndex + index].classList.add("block", colors[newBlock]);
+      displayNextShape[displayIndex + index].classList.add(
+        "block",
+        colors[newBlock]
+      );
     });
   }
 
@@ -150,7 +213,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (row.every((index) => squares[index].classList.contains("taken"))) {
         score += 10;
         ScoreDisplay.innerHTML = score;
-        debugger;
+
         row.forEach((index) => {
           squares[index].classList.remove("taken");
           squares[index].removeAttribute("class");
@@ -166,9 +229,25 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function gameOver() {
-    if(currElement.some(index => squares[index + currentIndex].classList.contains("taken"))) {
+    if (
+      currElement.some((index) =>
+        squares[index + currentIndex].classList.contains("taken")
+      )
+    ) {
       ScoreDisplay.innerHTML = "GAME OVER. YOUR SCORE WAS " + score;
       clearInterval(timerId);
+    }
+  }
+
+  function updateIntervalSpeed() {
+    if (score > scores[scoresCount]) {
+      clearInterval(timerId);
+      timerId = null;
+      intervalSpeed = speeds[scoresCount];
+      timerId = setInterval(moveDown, intervalSpeed);
+      if (scoresCount < scores.length) {
+        scoresCount++;
+      }
     }
   }
 
@@ -177,7 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
       clearInterval(timerId);
       timerId = null;
     } else {
-      timerId = setInterval(moveDown, 800);
+      timerId = setInterval(moveDown, intervalSpeed);
       if (shouldInitiallyRunDisplayShapes) {
         displayShape();
       }
